@@ -82,7 +82,27 @@ def tokenize_sft_example(
         )
     )
 
-    response_start = min(len(prompt_ids), len(full_ids))
+    if len(prompt_ids) > len(full_ids):
+        raise ValueError(
+            "Prompt token ids are longer than full conversation token ids. "
+            "Please verify tokenizer chat template compatibility."
+        )
+
+    if full_ids[: len(prompt_ids)] == prompt_ids:
+        response_start = len(prompt_ids)
+    else:
+        # Fallback to common-prefix boundary to avoid silently masking the
+        # whole sample when tokenizer chat templates differ slightly.
+        response_start = 0
+        common_bound = min(len(prompt_ids), len(full_ids))
+        while response_start < common_bound and prompt_ids[response_start] == full_ids[response_start]:
+            response_start += 1
+        if response_start == 0:
+            raise ValueError(
+                "Unable to locate response boundary from tokenizer chat template outputs. "
+                "Please check the selected model/template combination."
+            )
+
     source_len = response_start
     target_len = len(full_ids) - response_start
 

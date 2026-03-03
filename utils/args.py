@@ -143,6 +143,22 @@ def build_app_config(raw_cfg: dict[str, Any]) -> AppConfig:
         raise ValueError("This project currently supports stage=sft only.")
     if method.finetuning_type != "oft":
         raise ValueError("This project currently supports finetuning_type=oft only.")
+    if method.oft_rank < 0:
+        raise ValueError("`oft_rank` must be >= 0.")
+    if method.oft_block_size < 0:
+        raise ValueError("`oft_block_size` must be >= 0.")
+    if method.oft_rank == 0 and method.oft_block_size == 0:
+        raise ValueError("Either `oft_rank` or `oft_block_size` must be non-zero.")
+    if method.oft_rank != 0 and method.oft_block_size != 0:
+        raise ValueError(
+            "Specify only one of `oft_rank` or `oft_block_size` (set the other to 0) to satisfy PEFT OFT constraints."
+        )
+    if not (0.0 <= method.module_dropout < 1.0):
+        raise ValueError("`module_dropout` must be in [0.0, 1.0).")
+    if data.cutoff_len <= 0:
+        raise ValueError("`cutoff_len` must be a positive integer.")
+    if data.val_size < 0:
+        raise ValueError("`val_size` must be >= 0.")
     if not data.dataset_list:
         raise ValueError("Please provide `dataset` in config, e.g. CodeAlpaca-20k,Code-Evol-Instruct-OSS.")
 

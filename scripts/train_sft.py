@@ -141,6 +141,15 @@ def main() -> None:
     )
     model = apply_oft_adapter(model, oft_args)
 
+    if cfg.train.gradient_checkpointing and hasattr(model, "config"):
+        # Most causal LMs require disabling cache when checkpointing is enabled.
+        if getattr(model.config, "use_cache", None):
+            model.config.use_cache = False
+        # With PEFT adapters, gradient checkpointing may require enabling input grads
+        # to avoid missing/None gradients in some Transformers versions.
+        if hasattr(model, "enable_input_require_grads"):
+            model.enable_input_require_grads()
+
     if hasattr(model, "print_trainable_parameters"):
         model.print_trainable_parameters()
 
