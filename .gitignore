@@ -1,0 +1,6 @@
+.DS_Store
+data/*
+!data/dataset_info.json
+trained_models/
+eval_results/
+__pycache__/

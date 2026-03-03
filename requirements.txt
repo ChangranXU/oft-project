@@ -1,0 +1,15 @@
+torch
+transformers
+datasets
+peft
+accelerate
+omegaconf
+evaluate
+codebleu
+swanlab
+tqdm
+
+# Optional acceleration packages:
+# deepspeed
+# flash-attn
+

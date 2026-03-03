@@ -1,0 +1,19 @@
+{
+  "CodeAlpaca-20k": {
+    "file_name": "CodeAlpaca-20k/code_alpaca_20k.json",
+    "columns": {
+      "instruction": "instruction",
+      "input": "input",
+      "output": "output"
+    }
+  },
+  "Code-Evol-Instruct-OSS": {
+    "file_name": "Code-Evol-Instruct-OSS/code.evol.instruct.wiz.oss.json",
+    "columns": {
+      "instruction": "instruction",
+      "input": "input",
+      "output": "output"
+    }
+  }
+}
+
