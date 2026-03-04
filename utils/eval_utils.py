@@ -67,7 +67,7 @@ def build_humaneval_test_case(test: str, entry_point: str) -> str:
 
 
 def build_mbpp_prompt(example: dict[str, Any]) -> str:
-    prompt = str(example["prompt"]).strip()
+    prompt = str(example.get("prompt") or example.get("text") or "").strip()
     code = str(example.get("code", "")).strip()
     signature = None
     for line in code.splitlines():
