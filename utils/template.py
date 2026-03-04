@@ -52,7 +52,9 @@ def normalize_user_prompt(instruction: str, input_text: str) -> str:
     instruction = instruction.strip()
     input_text = input_text.strip()
     if input_text and input_text.lower() not in NO_INPUT_TOKENS:
-        return f"{instruction}\n\nInput:\n{input_text}"
+        if instruction:
+            return f"{instruction}\n{input_text}"
+        return input_text
     return instruction
 
 

@@ -36,7 +36,7 @@ def test_normalize_user_prompt_with_no_input_token() -> None:
 
 
 def test_normalize_user_prompt_with_input_text() -> None:
-    assert normalize_user_prompt("instruction", "x=1") == "instruction\n\nInput:\nx=1"
+    assert normalize_user_prompt("instruction", "x=1") == "instruction\nx=1"
 
 
 def test_tokenize_sft_example_masks_prompt_tokens(fake_chat_tokenizer_factory) -> None:

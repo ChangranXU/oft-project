@@ -40,7 +40,7 @@ def test_build_examples_mapper_uses_custom_columns() -> None:
         }
     )
     mapped = mapper({"task": "solve", "context": "x=1", "answer_col": "  done  "})
-    assert mapped["user_prompt"] == "solve\n\nInput:\nx=1"
+    assert mapped["user_prompt"] == "solve\nx=1"
     assert mapped["assistant_response"] == "done"
 
 
@@ -132,7 +132,7 @@ def test_load_and_prepare_filters_and_splits(monkeypatch: pytest.MonkeyPatch, tm
     assert len(eval_dataset) == 1
     assert len(train_dataset) + len(eval_dataset) == 2
 
-    assert "sum two nums\n\nInput:\na,b" in seen_prompts
+    assert "sum two nums\na,b" in seen_prompts
     assert "echo" in seen_prompts
 
     for dataset in (train_dataset, eval_dataset):
