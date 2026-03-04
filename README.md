@@ -129,9 +129,9 @@ Evaluation results are saved as JSON in `eval_results/`.
 - **Pass@k**: functional correctness estimated using `evaluate` package (`code_eval`).
 - **CodeBLEU**: code similarity between first prediction and reference solution.
 
-## 6) Run Unit Tests (Server Environment)
+## 6) Run Unit Tests
 
-The project includes LlamaFactory-style unit tests under `test/` for:
+The project includes unit tests under `test/` for:
 
 - data loading and preprocessing
 - template/tokenization behavior
