@@ -265,6 +265,7 @@ def main() -> None:
         tokenizer=tokenizer,
         project_root=PROJECT_ROOT,
     )
+    print(f"Number of training examples (after processing): {len(train_dataset)}")
 
     oft_args = OFTApplyArguments(
         oft_rank=cfg.method.oft_rank,
