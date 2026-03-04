@@ -224,8 +224,8 @@ def evaluate_mbpp(
 ) -> dict[str, Any]:
     # NOTE: datasets>=3 no longer supports remote dataset scripts (e.g. mbpp.py
     # in Muennighoff/mbpp). Use the canonical parquet-backed `mbpp` dataset and
-    # pin to the full config + test split.
-    dataset = load_dataset("mbpp", "full", split="test")
+    # pin to the sanitized config + test split.
+    dataset = load_dataset("mbpp", "sanitized", split="test")
     candidate_count = max(pass_k)
 
     all_predictions: list[list[str]] = []
