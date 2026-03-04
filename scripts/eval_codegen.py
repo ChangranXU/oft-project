@@ -116,11 +116,28 @@ def _generate_candidates(
     max_new_tokens: int,
 ) -> list[str]:
     messages = [{"role": "user", "content": prompt.strip()}]
-    inputs = tokenizer.apply_chat_template(
+    chat_inputs = tokenizer.apply_chat_template(
         messages,
+        tokenize=True,
         add_generation_prompt=True,
         return_tensors="pt",
-    ).to(device)
+    )
+
+    # transformers>=5 returns a BatchEncoding by default, while older versions
+    # may return a bare tensor. Support both for stable eval behavior.
+    model_inputs: dict[str, torch.Tensor]
+    if isinstance(chat_inputs, dict) or hasattr(chat_inputs, "keys"):
+        if hasattr(chat_inputs, "to"):
+            chat_inputs = chat_inputs.to(device)
+        input_ids = chat_inputs["input_ids"]
+        attention_mask = chat_inputs.get("attention_mask")
+        model_inputs = {"input_ids": input_ids}
+        if isinstance(attention_mask, torch.Tensor):
+            model_inputs["attention_mask"] = attention_mask
+    else:
+        if not isinstance(chat_inputs, torch.Tensor):
+            raise TypeError(f"Unexpected chat template output type: {type(chat_inputs)}")
+        model_inputs = {"input_ids": chat_inputs.to(device)}
 
     do_sample = num_candidates > 1 or temperature > 0
     if temperature <= 0:
@@ -128,7 +145,7 @@ def _generate_candidates(
 
     with torch.inference_mode():
         outputs = model.generate(
-            inputs,
+            **model_inputs,
             max_new_tokens=max_new_tokens,
             do_sample=do_sample,
             temperature=temperature,
@@ -138,7 +155,7 @@ def _generate_candidates(
             pad_token_id=tokenizer.eos_token_id,
         )
 
-    prompt_len = inputs.shape[-1]
+    prompt_len = model_inputs["input_ids"].shape[-1]
     candidates: list[str] = []
     for output in outputs:
         gen_tokens = output[prompt_len:]
