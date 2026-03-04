@@ -129,6 +129,28 @@ Evaluation results are saved as JSON in `eval_results/`.
 - **Pass@k**: functional correctness estimated using `evaluate` package (`code_eval`).
 - **CodeBLEU**: code similarity between first prediction and reference solution.
 
+## 6) Run Unit Tests (Server Environment)
+
+The project includes LlamaFactory-style unit tests under `test/` for:
+
+- data loading and preprocessing
+- template/tokenization behavior
+- OFT adapter target resolution and application wiring
+- training helper logic
+
+Run all tests:
+
+```bash
+cd oft-project
+pytest -q test
+```
+
+Run a single test module:
+
+```bash
+pytest -q test/test_oft_adapter.py
+```
+
 ## Notes
 
 - The evaluator accepts either:
@@ -136,4 +158,3 @@ Evaluation results are saved as JSON in `eval_results/`.
   - an OFT adapter directory (it auto-loads base model from `adapter_config.json`)
 - `qwen2_5_oft_sft.yaml` follows a LlamaFactory-like flat YAML style.
 - Keep your local dataset paths consistent with `data/dataset_info.json`.
-
