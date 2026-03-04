@@ -166,6 +166,65 @@ def prepare_output_dir(
             item.unlink()
 
 
+def align_model_special_tokens(model: Any, tokenizer: Any) -> dict[str, Any]:
+    """Align model/generation special-token ids to tokenizer values."""
+    if not hasattr(model, "config"):
+        return {}
+
+    model_has_generation_config = hasattr(model, "generation_config") and model.generation_config is not None
+    updated_tokens: dict[str, Any] = {}
+
+    tokenizer_eos = getattr(tokenizer, "eos_token_id", None)
+    tokenizer_bos = getattr(tokenizer, "bos_token_id", None)
+    tokenizer_pad = getattr(tokenizer, "pad_token_id", None)
+
+    # 1) EOS: preserve existing generation eos ids while prepending tokenizer eos.
+    tokenizer_has_new_eos = tokenizer_eos != getattr(model.config, "eos_token_id", None)
+    if model_has_generation_config:
+        gen_eos = model.generation_config.eos_token_id
+        if gen_eos is None:
+            tokenizer_has_new_eos |= tokenizer_eos != gen_eos
+        else:
+            if isinstance(gen_eos, int):
+                gen_eos = [gen_eos]
+                model.generation_config.eos_token_id = gen_eos
+            tokenizer_has_new_eos |= tokenizer_eos not in gen_eos
+
+    if tokenizer_has_new_eos:
+        updated_tokens["eos_token_id"] = tokenizer_eos
+        model.config.eos_token_id = tokenizer_eos
+        if model_has_generation_config:
+            all_eos_tokens: list[int] = [tokenizer_eos]
+            gen_eos = model.generation_config.eos_token_id
+            if gen_eos is not None:
+                all_eos_tokens += list(gen_eos)
+            model.generation_config.eos_token_id = [token for token in all_eos_tokens if token is not None]
+
+    # 2) BOS
+    tokenizer_has_new_bos = tokenizer_bos != getattr(model.config, "bos_token_id", None)
+    if model_has_generation_config:
+        tokenizer_has_new_bos |= tokenizer_bos != model.generation_config.bos_token_id
+
+    if tokenizer_has_new_bos:
+        updated_tokens["bos_token_id"] = tokenizer_bos
+        model.config.bos_token_id = tokenizer_bos
+        if model_has_generation_config:
+            model.generation_config.bos_token_id = tokenizer_bos
+
+    # 3) PAD
+    tokenizer_has_new_pad = tokenizer_pad != getattr(model.config, "pad_token_id", None)
+    if model_has_generation_config:
+        tokenizer_has_new_pad |= tokenizer_pad != model.generation_config.pad_token_id
+
+    if tokenizer_has_new_pad:
+        updated_tokens["pad_token_id"] = tokenizer_pad
+        model.config.pad_token_id = tokenizer_pad
+        if model_has_generation_config:
+            model.generation_config.pad_token_id = tokenizer_pad
+
+    return updated_tokens
+
+
 def main() -> None:
     config_path, overrides = parse_cli()
     raw_cfg = load_yaml_with_overrides(config_path, overrides)
@@ -185,6 +244,7 @@ def main() -> None:
         use_fast=cfg.model.use_fast_tokenizer,
         trust_remote_code=cfg.model.trust_remote_code,
     )
+    tokenizer.padding_side = "right"
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -198,10 +258,7 @@ def main() -> None:
         model_kwargs["attn_implementation"] = attn_impl
 
     model = AutoModelForCausalLM.from_pretrained(cfg.model.model_name_or_path, **model_kwargs)
-    if hasattr(model, "config") and getattr(tokenizer, "pad_token_id", None) is not None:
-        model.config.pad_token_id = tokenizer.pad_token_id
-    if hasattr(model, "generation_config") and getattr(tokenizer, "pad_token_id", None) is not None:
-        model.generation_config.pad_token_id = tokenizer.pad_token_id
+    align_model_special_tokens(model, tokenizer)
 
     train_dataset, eval_dataset = load_and_prepare_sft_datasets(
         data_args=cfg.data,
