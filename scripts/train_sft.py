@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import inspect
 from pathlib import Path
 import shutil
 from typing import Any
@@ -227,15 +228,21 @@ def main() -> None:
         pad_to_multiple_of=8 if (cfg.train.bf16 or cfg.train.fp16) else None,
     )
 
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
-        tokenizer=tokenizer,
-        data_collator=data_collator,
-        callbacks=swanlab_callbacks,
-    )
+    trainer_kwargs: dict[str, Any] = {
+        "model": model,
+        "args": training_args,
+        "train_dataset": train_dataset,
+        "eval_dataset": eval_dataset,
+        "data_collator": data_collator,
+        "callbacks": swanlab_callbacks,
+    }
+    trainer_init_params = inspect.signature(Trainer.__init__).parameters
+    if "processing_class" in trainer_init_params:
+        trainer_kwargs["processing_class"] = tokenizer
+    elif "tokenizer" in trainer_init_params:
+        trainer_kwargs["tokenizer"] = tokenizer
+
+    trainer = Trainer(**trainer_kwargs)
 
     if cfg.method.do_train:
         train_result = trainer.train(resume_from_checkpoint=cfg.train.resume_from_checkpoint)
