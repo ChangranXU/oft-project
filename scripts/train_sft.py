@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import shutil
 from typing import Any
 
 from transformers import (
@@ -92,12 +93,58 @@ def build_training_args(
     training_fields = TrainingArguments.__dataclass_fields__
     if "evaluation_strategy" in training_fields:
         kwargs["evaluation_strategy"] = evaluation_strategy
-    else:
+    elif "eval_strategy" in training_fields:
         kwargs["eval_strategy"] = evaluation_strategy
 
-    # Remove None values to keep TrainingArguments clean.
-    kwargs = {k: v for k, v in kwargs.items() if v is not None}
+    # Keep compatibility across transformers versions by only passing
+    # arguments that exist in the installed TrainingArguments dataclass.
+    kwargs = {
+        k: v
+        for k, v in kwargs.items()
+        if v is not None and k in training_fields
+    }
     return TrainingArguments(**kwargs)
+
+
+def prepare_output_dir(
+    output_dir: str,
+    overwrite_output_dir: bool,
+    do_train: bool,
+    resume_from_checkpoint: str | None,
+) -> None:
+    path = Path(output_dir)
+    if path.exists() and not path.is_dir():
+        raise NotADirectoryError(f"`output_dir` exists but is not a directory: {path}")
+
+    if not path.exists():
+        path.mkdir(parents=True, exist_ok=True)
+        return
+
+    if not do_train:
+        return
+
+    is_non_empty = any(path.iterdir())
+    if not is_non_empty:
+        return
+
+    # Match classic HF behavior:
+    # - resume_from_checkpoint: allow existing directory.
+    # - overwrite_output_dir: clean existing artifacts before a fresh run.
+    if resume_from_checkpoint:
+        return
+
+    if not overwrite_output_dir:
+        raise ValueError(
+            f"Output directory ({path}) already exists and is not empty. "
+            "Use a new output_dir, set overwrite_output_dir=true, "
+            "or set resume_from_checkpoint."
+        )
+
+    for item in path.iterdir():
+        if item.is_dir():
+            shutil.rmtree(item)
+        else:
+            item.unlink()
 
 
 def main() -> None:
@@ -107,6 +154,12 @@ def main() -> None:
     set_seed(cfg.data.seed)
 
     output_dir = resolve_path(cfg.output.output_dir, PROJECT_ROOT)
+    prepare_output_dir(
+        output_dir=output_dir,
+        overwrite_output_dir=cfg.output.overwrite_output_dir,
+        do_train=cfg.method.do_train,
+        resume_from_checkpoint=cfg.train.resume_from_checkpoint,
+    )
 
     tokenizer = AutoTokenizer.from_pretrained(
         cfg.model.model_name_or_path,
