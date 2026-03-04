@@ -82,6 +82,7 @@ class TrainArguments:
     learning_rate: float = 5.0e-6
     num_train_epochs: float = 3.0
     lr_scheduler_type: str = "cosine"
+    warmup_steps: int | None = None
     warmup_ratio: float = 0.0
     bf16: bool = False
     fp16: bool = False

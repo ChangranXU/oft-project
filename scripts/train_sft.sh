@@ -10,8 +10,10 @@ shift || true
 
 NUM_GPUS="${NUM_GPUS:-1}"
 MASTER_PORT="${MASTER_PORT:-29500}"
+TRITON_CACHE_DIR="${TRITON_CACHE_DIR:-${HOME}/.triton}"
 
 cd "${PROJECT_ROOT}"
+mkdir -p "${TRITON_CACHE_DIR}/autotune"
 
 if [[ "${NUM_GPUS}" -gt 1 ]]; then
   torchrun \

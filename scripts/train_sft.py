@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import argparse
 import inspect
+import math
+import os
 from pathlib import Path
 import shutil
 from typing import Any
@@ -54,6 +56,7 @@ def build_training_args(
     output_dir: str,
     report_to: list[str],
     has_eval_dataset: bool,
+    train_dataset_size: int,
 ) -> TrainingArguments:
     has_eval = has_eval_dataset and cfg.train.eval_strategy is not None and cfg.train.eval_strategy != "no"
     evaluation_strategy = cfg.train.eval_strategy if has_eval else "no"
@@ -75,7 +78,6 @@ def build_training_args(
         learning_rate=cfg.train.learning_rate,
         num_train_epochs=cfg.train.num_train_epochs,
         lr_scheduler_type=cfg.train.lr_scheduler_type,
-        warmup_ratio=cfg.train.warmup_ratio,
         bf16=cfg.train.bf16,
         fp16=cfg.train.fp16,
         ddp_timeout=cfg.train.ddp_timeout,
@@ -96,6 +98,22 @@ def build_training_args(
         kwargs["evaluation_strategy"] = evaluation_strategy
     elif "eval_strategy" in training_fields:
         kwargs["eval_strategy"] = evaluation_strategy
+
+    # Transformers 5.x deprecates warmup_ratio; prefer warmup_steps when available.
+    if cfg.train.warmup_steps is not None:
+        kwargs["warmup_steps"] = max(int(cfg.train.warmup_steps), 0)
+    elif cfg.train.warmup_ratio > 0:
+        if "warmup_steps" in training_fields:
+            world_size = max(int(os.environ.get("WORLD_SIZE", "1")), 1)
+            effective_batch = max(
+                cfg.train.per_device_train_batch_size * cfg.train.gradient_accumulation_steps * world_size,
+                1,
+            )
+            steps_per_epoch = max(math.ceil(train_dataset_size / effective_batch), 1)
+            total_steps = max(math.ceil(steps_per_epoch * cfg.train.num_train_epochs), 1)
+            kwargs["warmup_steps"] = max(int(math.ceil(total_steps * cfg.train.warmup_ratio)), 1)
+        elif "warmup_ratio" in training_fields:
+            kwargs["warmup_ratio"] = cfg.train.warmup_ratio
 
     # Keep compatibility across transformers versions by only passing
     # arguments that exist in the installed TrainingArguments dataclass.
@@ -180,6 +198,10 @@ def main() -> None:
         model_kwargs["attn_implementation"] = attn_impl
 
     model = AutoModelForCausalLM.from_pretrained(cfg.model.model_name_or_path, **model_kwargs)
+    if hasattr(model, "config") and getattr(tokenizer, "pad_token_id", None) is not None:
+        model.config.pad_token_id = tokenizer.pad_token_id
+    if hasattr(model, "generation_config") and getattr(tokenizer, "pad_token_id", None) is not None:
+        model.generation_config.pad_token_id = tokenizer.pad_token_id
 
     train_dataset, eval_dataset = load_and_prepare_sft_datasets(
         data_args=cfg.data,
@@ -219,6 +241,7 @@ def main() -> None:
         output_dir=output_dir,
         report_to=report_to,
         has_eval_dataset=eval_dataset is not None,
+        train_dataset_size=len(train_dataset),
     )
 
     data_collator = DataCollatorForSeq2Seq(
