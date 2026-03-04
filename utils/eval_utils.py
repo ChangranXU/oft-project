@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import os
 import re
+import warnings
 from statistics import mean
 from typing import Any
 
@@ -102,11 +103,22 @@ def compute_codegen_metrics(
             value = value.item()
         pass_at_k[key] = float(value)
 
-    codebleu = calc_codebleu(
-        references=codebleu_references,
-        predictions=first_predictions,
-        lang="python",
-    )["codebleu"]
+    try:
+        codebleu = calc_codebleu(
+            references=codebleu_references,
+            predictions=first_predictions,
+            lang="python",
+        )["codebleu"]
+    except Exception as exc:  # pragma: no cover - environment-dependent dependency mismatch
+        warnings.warn(
+            "CodeBLEU computation failed; setting CodeBLEU to 0.0. "
+            "Install compatible versions: "
+            "`tree-sitter==0.22.3` and `tree-sitter-python==0.21.0`. "
+            f"Original error: {exc}",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        codebleu = 0.0
 
     return {
         "syntax_rate": float(syntax_rate),

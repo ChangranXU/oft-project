@@ -6,7 +6,9 @@ accelerate
 omegaconf
 evaluate
 codebleu
-tree-sitter-python
+# Keep tree-sitter packages in a CodeBLEU-compatible range.
+tree-sitter==0.22.3
+tree-sitter-python==0.21.0
 swanlab
 tqdm
 pytest
