@@ -9,15 +9,27 @@ NO_INPUT_TOKENS = {"<noinput>", "< noinput >", "none", "null", "n/a"}
 
 def _extract_input_ids(tokenized: Any) -> list[int]:
     """Normalize tokenizer outputs across transformers versions."""
-    if isinstance(tokenized, dict):
+    input_ids = tokenized
+    if isinstance(tokenized, dict) or hasattr(tokenized, "keys"):
         if "input_ids" not in tokenized:
-            raise ValueError("Chat template output dict is missing `input_ids`.")
+            raise ValueError("Chat template output mapping is missing `input_ids`.")
         input_ids = tokenized["input_ids"]
-    else:
-        input_ids = tokenized
+    elif hasattr(tokenized, "input_ids"):
+        input_ids = tokenized.input_ids
+
+    # Handle tensors/arrays returned by some tokenizers.
+    if hasattr(input_ids, "tolist"):
+        input_ids = input_ids.tolist()
 
     if not isinstance(input_ids, list):
         raise TypeError(f"`input_ids` should be list[int], got {type(input_ids)}.")
+
+    # Some versions return a single-item batch: [[...]].
+    if input_ids and isinstance(input_ids[0], list):
+        if len(input_ids) != 1:
+            raise ValueError(f"`input_ids` should contain one sequence, got batch size {len(input_ids)}.")
+        input_ids = input_ids[0]
+
     return [int(token_id) for token_id in input_ids]
 
 
