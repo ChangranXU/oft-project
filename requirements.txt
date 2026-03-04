@@ -6,6 +6,7 @@ accelerate
 omegaconf
 evaluate
 codebleu
+tree-sitter-python
 swanlab
 tqdm
 pytest
