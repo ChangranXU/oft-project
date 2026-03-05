@@ -13,6 +13,13 @@
       "instruction": "instruction",
       "output": "output"
     }
+  },
+  "LeetCodeDataset-train": {
+    "file_name": "LeetCodeDataset/LeetCodeDataset-train.jsonl",
+    "columns": {
+      "instruction": "query",
+      "output": "response"
+    }
   }
 }
 

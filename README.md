@@ -6,6 +6,7 @@ This project provides:
 - Local dataset loading for:
   - `sahil2801/CodeAlpaca-20k`
   - `CodeResearch/Code-Evol-Instruct-OSS`
+  - `newfacade/LeetCodeDataset` (`LeetCodeDataset-train` registry key)
 - SwanLab experiment tracking
 - Code generation evaluation on:
   - `openai/openai_humaneval`
@@ -47,8 +48,10 @@ Downloaded files are expected at:
 
 - `data/CodeAlpaca-20k/code_alpaca_20k.json`
 - `data/Code-Evol-Instruct-OSS/code.evol.instruct.wiz.oss.json`
+- `data/LeetCodeDataset/LeetCodeDataset-train.jsonl`
 
 Dataset registry is configured in `data/dataset_info.json`.
+The `LeetCodeDataset-train` entry uses `query` as prompt and `response` as target.
 
 ## 3) Train with OFT SFT
 
@@ -68,6 +71,12 @@ With runtime overrides:
 
 ```bash
 bash scripts/train_sft.sh config/qwen2_5_oft_sft.yaml learning_rate=1e-5 num_train_epochs=2
+```
+
+Use LeetCode train data (optional override, default YAML unchanged):
+
+```bash
+bash scripts/train_sft.sh config/qwen2_5_oft_sft.yaml dataset=LeetCodeDataset-train
 ```
 
 With DeepSpeed (set in YAML or override):
@@ -95,7 +104,7 @@ Example override:
 bash scripts/train_sft.sh config/qwen2_5_oft_sft.yaml swanlab_project=oft-mini-project swanlab_run_name=qwen25-oft-sft
 ```
 
-## 4) Evaluate a Model (HF ID or Local Path)
+## 4) Evaluate a Model (HF ID or Local Trained Adapter Path)
 
 Run both benchmarks:
 

@@ -73,6 +73,11 @@ download_dataset() {
   local name="$2"
   local out_dir="${DATA_DIR}/${name}"
 
+  if [[ -d "${out_dir}" ]] && [[ -n "$(ls -A "${out_dir}" 2>/dev/null)" ]]; then
+    echo -e "\nDataset ${repo_id} already exists at ${out_dir}, skipping download."
+    return 0
+  fi
+
   echo -e "\nDownloading dataset ${repo_id}..."
 
   if command -v hf >/dev/null 2>&1; then
@@ -86,5 +91,6 @@ download_dataset() {
 
 download_dataset "sahil2801/CodeAlpaca-20k" "CodeAlpaca-20k"
 download_dataset "CodeResearch/Code-Evol-Instruct-OSS" "Code-Evol-Instruct-OSS"
+download_dataset "newfacade/LeetCodeDataset" "LeetCodeDataset"
 
 echo -e "\nDone. Datasets are under: ${DATA_DIR}"
