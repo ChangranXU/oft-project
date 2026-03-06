@@ -6,6 +6,7 @@ This project provides:
 - Local dataset loading for:
   - `sahil2801/CodeAlpaca-20k`
   - `CodeResearch/Code-Evol-Instruct-OSS`
+  - `m-a-p/CodeFeedback-Filtered-Instruction` (`CodeFeedback-Filtered-Instruction` registry key)
   - `newfacade/LeetCodeDataset` (`LeetCodeDataset-train` registry key)
 - SwanLab experiment tracking
 - Code generation evaluation on:
@@ -48,9 +49,11 @@ Downloaded files are expected at:
 
 - `data/CodeAlpaca-20k/code_alpaca_20k.json`
 - `data/Code-Evol-Instruct-OSS/code.evol.instruct.wiz.oss.json`
+- `data/CodeFeedback-Filtered-Instruction/CodeFeedback-Filtered-Instruction.jsonl`
 - `data/LeetCodeDataset/LeetCodeDataset-train.jsonl`
 
 Dataset registry is configured in `data/dataset_info.json`.
+The `CodeFeedback-Filtered-Instruction` entry uses `query` as prompt and `answer` as target.
 The `LeetCodeDataset-train` entry uses `query` as prompt and `response` as target.
 
 ## 3) Train with OFT SFT
@@ -77,6 +80,12 @@ Use LeetCode train data (optional override, default YAML unchanged):
 
 ```bash
 bash scripts/train_sft.sh config/qwen2_5_oft_sft.yaml dataset=LeetCodeDataset-train
+```
+
+Use CodeFeedback train data (optional override, default YAML unchanged):
+
+```bash
+bash scripts/train_sft.sh config/qwen2_5_oft_sft.yaml dataset=CodeFeedback-Filtered-Instruction
 ```
 
 With DeepSpeed (set in YAML or override):

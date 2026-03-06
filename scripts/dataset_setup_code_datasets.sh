@@ -91,6 +91,7 @@ download_dataset() {
 
 download_dataset "sahil2801/CodeAlpaca-20k" "CodeAlpaca-20k"
 download_dataset "CodeResearch/Code-Evol-Instruct-OSS" "Code-Evol-Instruct-OSS"
+download_dataset "m-a-p/CodeFeedback-Filtered-Instruction" "CodeFeedback-Filtered-Instruction"
 download_dataset "newfacade/LeetCodeDataset" "LeetCodeDataset"
 
 echo -e "\nDone. Datasets are under: ${DATA_DIR}"

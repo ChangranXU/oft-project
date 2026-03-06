@@ -14,6 +14,13 @@
       "output": "output"
     }
   },
+  "CodeFeedback-Filtered-Instruction": {
+    "file_name": "CodeFeedback-Filtered-Instruction/CodeFeedback-Filtered-Instruction.jsonl",
+    "columns": {
+      "input": "query",
+      "output": "answer"
+    }
+  },
   "LeetCodeDataset-train": {
     "file_name": "LeetCodeDataset/LeetCodeDataset-train.jsonl",
     "columns": {
