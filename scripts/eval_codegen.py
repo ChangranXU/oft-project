@@ -151,6 +151,11 @@ def _generate_candidates(
     if do_sample:
         generation_kwargs["temperature"] = temperature
         generation_kwargs["top_p"] = top_p
+    else:
+        # Override any sampling defaults from the model's generation_config so
+        # greedy decoding does not trip temperature/top-p validation.
+        generation_kwargs["temperature"] = 1.0
+        generation_kwargs["top_p"] = 1.0
 
     with torch.inference_mode():
         outputs = model.generate(**generation_kwargs)
