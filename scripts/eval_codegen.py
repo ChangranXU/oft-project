@@ -49,7 +49,12 @@ def parse_args() -> argparse.Namespace:
         default="1",
         help="Comma-separated k values for pass@k, e.g. 1 or 1,5,10.",
     )
-    parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=0.0,
+        help="Sampling temperature (0 for greedy decoding).",
+    )
     parser.add_argument("--top_p", type=float, default=0.95)
     parser.add_argument("--max_new_tokens", type=int, default=2048)
     parser.add_argument(
@@ -140,25 +145,20 @@ def _generate_candidates(
         model_inputs = {"input_ids": chat_inputs.to(device)}
 
     do_sample = num_candidates > 1 or temperature > 0
-    generation_kwargs = {
-        **model_inputs,
-        "max_new_tokens": max_new_tokens,
-        "do_sample": do_sample,
-        "num_return_sequences": num_candidates,
-        "eos_token_id": tokenizer.eos_token_id,
-        "pad_token_id": tokenizer.eos_token_id,
-    }
-    if do_sample:
-        generation_kwargs["temperature"] = temperature
-        generation_kwargs["top_p"] = top_p
-    else:
-        # Override any sampling defaults from the model's generation_config so
-        # greedy decoding does not trip temperature/top-p validation.
-        generation_kwargs["temperature"] = 1.0
-        generation_kwargs["top_p"] = 1.0
+    if temperature <= 0:
+        temperature = 1.0
 
     with torch.inference_mode():
-        outputs = model.generate(**generation_kwargs)
+        outputs = model.generate(
+            **model_inputs,
+            max_new_tokens=max_new_tokens,
+            do_sample=do_sample,
+            temperature=temperature,
+            top_p=top_p,
+            num_return_sequences=num_candidates,
+            eos_token_id=tokenizer.eos_token_id,
+            pad_token_id=tokenizer.eos_token_id,
+        )
 
     prompt_len = model_inputs["input_ids"].shape[-1]
     candidates: list[str] = []
