@@ -78,6 +78,8 @@ def _tokenize_batch(batch: dict[str, list[Any]], tokenizer: Any, cutoff_len: int
             assistant_response=str(assistant_response),
             cutoff_len=cutoff_len,
         )
+        if tokenized is None:
+            continue
         input_ids.append(tokenized["input_ids"])
         labels.append(tokenized["labels"])
         attention_masks.append(tokenized["attention_mask"])

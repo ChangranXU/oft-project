@@ -51,7 +51,7 @@ def test_tokenize_sft_example_masks_prompt_tokens(fake_chat_tokenizer_factory) -
     assert tokenized["attention_mask"] == [1, 1, 1, 1, 1]
 
 
-def test_tokenize_sft_example_truncates_to_cutoff(fake_chat_tokenizer_factory) -> None:
+def test_tokenize_sft_example_drops_examples_longer_than_cutoff(fake_chat_tokenizer_factory) -> None:
     tokenizer = fake_chat_tokenizer_factory(
         prompt_ids=[1, 2, 3, 4, 5, 6],
         full_ids=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
@@ -62,8 +62,7 @@ def test_tokenize_sft_example_truncates_to_cutoff(fake_chat_tokenizer_factory) -
         assistant_response="answer",
         cutoff_len=8,
     )
-    assert len(tokenized["input_ids"]) == len(tokenized["labels"]) == len(tokenized["attention_mask"]) == 8
-    assert any(label != IGNORE_INDEX for label in tokenized["labels"])
+    assert tokenized is None
 
 
 def test_tokenize_sft_example_requires_positive_cutoff(fake_chat_tokenizer_factory) -> None:

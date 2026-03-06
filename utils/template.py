@@ -74,7 +74,7 @@ def tokenize_sft_example(
     user_prompt: str,
     assistant_response: str,
     cutoff_len: int,
-) -> dict[str, list[int]]:
+) -> dict[str, list[int]] | None:
     if cutoff_len <= 0:
         raise ValueError("`cutoff_len` must be a positive integer.")
 
@@ -117,15 +117,8 @@ def tokenize_sft_example(
                 "Please check the selected model/template combination."
             )
 
-    source_len = response_start
-    target_len = len(full_ids) - response_start
-
     if len(full_ids) > cutoff_len:
-        source_ids = full_ids[:source_len]
-        target_ids = full_ids[response_start:]
-        new_source_len, new_target_len = _infer_truncation_lengths(source_len, target_len, cutoff_len)
-        full_ids = source_ids[:new_source_len] + target_ids[:new_target_len]
-        response_start = new_source_len
+        return None
 
     labels = [IGNORE_INDEX] * response_start + full_ids[response_start:]
 

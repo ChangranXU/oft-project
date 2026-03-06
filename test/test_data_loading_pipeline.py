@@ -98,11 +98,9 @@ def test_load_and_prepare_filters_and_splits(monkeypatch: pytest.MonkeyPatch, tm
         del tokenizer, cutoff_len
         seen_prompts.append(user_prompt)
         if assistant_response == "ans3":
-            labels = [IGNORE_INDEX, IGNORE_INDEX]
-            input_ids = [7, 8]
-        else:
-            labels = [IGNORE_INDEX, 42, 43]
-            input_ids = [1, 2, 3]
+            return None
+        labels = [IGNORE_INDEX, 42, 43]
+        input_ids = [1, 2, 3]
         return {
             "input_ids": input_ids,
             "labels": labels,
