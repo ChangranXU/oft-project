@@ -49,7 +49,7 @@ def parse_args() -> argparse.Namespace:
         default="1",
         help="Comma-separated k values for pass@k, e.g. 1 or 1,5,10.",
     )
-    parser.add_argument("--temperature", type=float, default=0.2)
+    parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--top_p", type=float, default=0.95)
     parser.add_argument("--max_new_tokens", type=int, default=2048)
     parser.add_argument(
@@ -140,20 +140,20 @@ def _generate_candidates(
         model_inputs = {"input_ids": chat_inputs.to(device)}
 
     do_sample = num_candidates > 1 or temperature > 0
-    if temperature <= 0:
-        temperature = 1.0
+    generation_kwargs = {
+        **model_inputs,
+        "max_new_tokens": max_new_tokens,
+        "do_sample": do_sample,
+        "num_return_sequences": num_candidates,
+        "eos_token_id": tokenizer.eos_token_id,
+        "pad_token_id": tokenizer.eos_token_id,
+    }
+    if do_sample:
+        generation_kwargs["temperature"] = temperature
+        generation_kwargs["top_p"] = top_p
 
     with torch.inference_mode():
-        outputs = model.generate(
-            **model_inputs,
-            max_new_tokens=max_new_tokens,
-            do_sample=do_sample,
-            temperature=temperature,
-            top_p=top_p,
-            num_return_sequences=num_candidates,
-            eos_token_id=tokenizer.eos_token_id,
-            pad_token_id=tokenizer.eos_token_id,
-        )
+        outputs = model.generate(**generation_kwargs)
 
     prompt_len = model_inputs["input_ids"].shape[-1]
     candidates: list[str] = []
