@@ -86,10 +86,8 @@ class TrainArguments:
     warmup_ratio: float = 0.0
     bf16: bool = False
     fp16: bool = False
-    ddp_timeout: int = 1800
     resume_from_checkpoint: str | None = None
     gradient_checkpointing: bool = False
-    deepspeed: str | None = None
     per_device_eval_batch_size: int = 1
     eval_strategy: str | None = None
     eval_steps: int | None = None
@@ -139,6 +137,11 @@ def build_app_config(raw_cfg: dict[str, Any]) -> AppConfig:
 
     if "evaluation_strategy" in raw_cfg and train.eval_strategy is None:
         train.eval_strategy = raw_cfg["evaluation_strategy"]
+    if "deepspeed" in raw_cfg and raw_cfg["deepspeed"] not in (None, "", False):
+        raise ValueError(
+            "DeepSpeed is no longer supported in this project. "
+            "Please remove `deepspeed` from the config/overrides."
+        )
 
     if method.stage != "sft":
         raise ValueError("This project currently supports stage=sft only.")

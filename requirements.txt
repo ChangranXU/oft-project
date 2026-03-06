@@ -14,6 +14,5 @@ tqdm
 pytest
 
 # Optional acceleration packages:
-# deepspeed
 # flash-attn
 

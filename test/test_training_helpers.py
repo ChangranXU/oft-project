@@ -24,8 +24,6 @@ class FakeTrainingArguments:
         "lr_scheduler_type": None,
         "bf16": None,
         "fp16": None,
-        "ddp_timeout": None,
-        "deepspeed": None,
         "gradient_checkpointing": None,
         "eval_steps": None,
         "report_to": None,
@@ -89,7 +87,6 @@ def test_build_training_args_disables_eval_when_no_eval_dataset(monkeypatch: pyt
 
 def test_build_training_args_computes_warmup_steps_from_ratio(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(train_sft, "TrainingArguments", FakeTrainingArguments)
-    monkeypatch.setenv("WORLD_SIZE", "2")
     cfg = _build_cfg(warmup_steps=None, warmup_ratio=0.25, num_train_epochs=2.0)
     args = train_sft.build_training_args(
         cfg=cfg,
@@ -98,7 +95,12 @@ def test_build_training_args_computes_warmup_steps_from_ratio(monkeypatch: pytes
         has_eval_dataset=True,
         train_dataset_size=64,
     )
-    assert args.warmup_steps == 2
+    assert args.warmup_steps == 4
+
+
+def test_build_app_config_rejects_deepspeed_override() -> None:
+    with pytest.raises(ValueError, match="DeepSpeed is no longer supported"):
+        _build_cfg(deepspeed="deepspeed/ds_z2_config.json")
 
 
 def test_prepare_output_dir_raises_for_non_empty_without_overwrite(tmp_path: Path) -> None:

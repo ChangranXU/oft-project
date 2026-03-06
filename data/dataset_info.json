@@ -16,6 +16,9 @@
   },
   "CodeFeedback-Filtered-Instruction": {
     "file_name": "CodeFeedback-Filtered-Instruction/CodeFeedback-Filtered-Instruction.jsonl",
+    "filter": {
+      "lang": "python"
+    },
     "columns": {
       "input": "query",
       "output": "answer"

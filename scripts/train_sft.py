@@ -62,10 +62,6 @@ def build_training_args(
     evaluation_strategy = cfg.train.eval_strategy if has_eval else "no"
     report_to_value: list[str] | str = [] if report_to == ["none"] else report_to
 
-    deepspeed_path = cfg.train.deepspeed
-    if deepspeed_path:
-        deepspeed_path = resolve_path(deepspeed_path, PROJECT_ROOT)
-
     kwargs: dict[str, Any] = dict(
         output_dir=output_dir,
         overwrite_output_dir=cfg.output.overwrite_output_dir,
@@ -80,8 +76,6 @@ def build_training_args(
         lr_scheduler_type=cfg.train.lr_scheduler_type,
         bf16=cfg.train.bf16,
         fp16=cfg.train.fp16,
-        ddp_timeout=cfg.train.ddp_timeout,
-        deepspeed=deepspeed_path,
         gradient_checkpointing=cfg.train.gradient_checkpointing,
         eval_steps=cfg.train.eval_steps,
         report_to=report_to_value,
@@ -104,9 +98,8 @@ def build_training_args(
         kwargs["warmup_steps"] = max(int(cfg.train.warmup_steps), 0)
     elif cfg.train.warmup_ratio > 0:
         if "warmup_steps" in training_fields:
-            world_size = max(int(os.environ.get("WORLD_SIZE", "1")), 1)
             effective_batch = max(
-                cfg.train.per_device_train_batch_size * cfg.train.gradient_accumulation_steps * world_size,
+                cfg.train.per_device_train_batch_size * cfg.train.gradient_accumulation_steps,
                 1,
             )
             steps_per_epoch = max(math.ceil(train_dataset_size / effective_batch), 1)
@@ -225,7 +218,17 @@ def align_model_special_tokens(model: Any, tokenizer: Any) -> dict[str, Any]:
     return updated_tokens
 
 
+def ensure_single_process_training() -> None:
+    world_size = int(os.environ.get("WORLD_SIZE", "1"))
+    if world_size > 1:
+        raise RuntimeError(
+            "Multi-GPU / distributed training is not supported in this project. "
+            "Please run with a single process (WORLD_SIZE=1)."
+        )
+
+
 def main() -> None:
+    ensure_single_process_training()
     config_path, overrides = parse_cli()
     raw_cfg = load_yaml_with_overrides(config_path, overrides)
     cfg = build_app_config(raw_cfg)

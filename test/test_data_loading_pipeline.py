@@ -139,3 +139,60 @@ def test_load_and_prepare_filters_and_splits(monkeypatch: pytest.MonkeyPatch, tm
         record = dataset[0]
         assert len(record["input_ids"]) == len(record["labels"]) == len(record["attention_mask"])
         assert any(label != IGNORE_INDEX for label in record["labels"])
+
+
+def test_load_and_prepare_applies_row_filter(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    dataset_dir = tmp_path / "datasets"
+    _write_dataset_registry(
+        dataset_dir,
+        {
+            "toy": {
+                "file_name": "toy.json",
+                "filter": {"lang": "python"},
+                "columns": {"instruction": "instruction", "input": "input", "output": "output"},
+            }
+        },
+    )
+    (dataset_dir / "toy.json").write_text("[]", encoding="utf-8")
+
+    rows = [
+        {"instruction": "keep python", "input": "", "output": "ans1", "lang": "python"},
+        {"instruction": "drop sql", "input": "", "output": "ans2", "lang": "sql"},
+    ]
+    seen_prompts: list[str] = []
+
+    def fake_load_dataset(*args, **kwargs):
+        assert args[0] == "json"
+        assert kwargs["split"] == "train"
+        return Dataset.from_list(rows)
+
+    def fake_tokenize_sft_example(tokenizer, user_prompt, assistant_response, cutoff_len):
+        del tokenizer, assistant_response, cutoff_len
+        seen_prompts.append(user_prompt)
+        return {
+            "input_ids": [1, 2],
+            "labels": [IGNORE_INDEX, 99],
+            "attention_mask": [1, 1],
+        }
+
+    monkeypatch.setattr(data_module, "load_dataset", fake_load_dataset)
+    monkeypatch.setattr(data_module, "tokenize_sft_example", fake_tokenize_sft_example)
+
+    args = DataArguments(
+        dataset="toy",
+        dataset_dir="datasets",
+        cutoff_len=128,
+        overwrite_cache=True,
+        preprocessing_num_workers=None,
+        val_size=0.0,
+        seed=7,
+    )
+    train_dataset, eval_dataset = load_and_prepare_sft_datasets(
+        data_args=args,
+        tokenizer=object(),
+        project_root=tmp_path,
+    )
+
+    assert eval_dataset is None
+    assert len(train_dataset) == 1
+    assert seen_prompts == ["keep python"]

@@ -9,20 +9,15 @@ CONFIG_PATH="${1:-${PROJECT_ROOT}/config/qwen2_5_oft_sft.yaml}"
 shift || true
 
 NUM_GPUS="${NUM_GPUS:-1}"
-MASTER_PORT="${MASTER_PORT:-29500}"
 TRITON_CACHE_DIR="${TRITON_CACHE_DIR:-${HOME}/.triton}"
 
 cd "${PROJECT_ROOT}"
 mkdir -p "${TRITON_CACHE_DIR}/autotune"
 
-if [[ "${NUM_GPUS}" -gt 1 ]]; then
-  torchrun \
-    --nproc_per_node "${NUM_GPUS}" \
-    --master_port "${MASTER_PORT}" \
-    "${PROJECT_ROOT}/scripts/train_sft.py" \
-    "${CONFIG_PATH}" \
-    "$@"
-else
-  python "${PROJECT_ROOT}/scripts/train_sft.py" "${CONFIG_PATH}" "$@"
+if [[ "${NUM_GPUS}" -ne 1 ]]; then
+  echo "Error: Multi-GPU training is no longer supported. Please use NUM_GPUS=1." >&2
+  exit 1
 fi
+
+python "${PROJECT_ROOT}/scripts/train_sft.py" "${CONFIG_PATH}" "$@"
 

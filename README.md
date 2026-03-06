@@ -21,7 +21,6 @@ This project provides:
 
 - `config/`: training YAML config
 - `data/dataset_info.json`: local dataset registry
-- `deepspeed/`: DeepSpeed config files
 - `scripts/train_sft.py`: OFT SFT trainer entrypoint
 - `scripts/eval_codegen.py`: HumanEval/MBPP evaluator
 - `scripts/*.sh`: convenience shell wrappers
@@ -36,7 +35,6 @@ pip install -r requirements.txt
 
 Optional acceleration:
 
-- Install `deepspeed` if using DeepSpeed.
 - Install `flash-attn` if your CUDA environment supports FlashAttention2.
 
 ## 2) Download Datasets
@@ -64,12 +62,6 @@ Default (single GPU):
 bash scripts/train_sft.sh config/qwen2_5_oft_sft.yaml
 ```
 
-Multi-GPU:
-
-```bash
-NUM_GPUS=4 MASTER_PORT=29501 bash scripts/train_sft.sh config/qwen2_5_oft_sft.yaml
-```
-
 With runtime overrides:
 
 ```bash
@@ -86,12 +78,6 @@ Use CodeFeedback train data (optional override, default YAML unchanged):
 
 ```bash
 bash scripts/train_sft.sh config/qwen2_5_oft_sft.yaml dataset=CodeFeedback-Filtered-Instruction
-```
-
-With DeepSpeed (set in YAML or override):
-
-```bash
-bash scripts/train_sft.sh config/qwen2_5_oft_sft.yaml deepspeed=deepspeed/ds_z2_config.json
 ```
 
 ### SwanLab

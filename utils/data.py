@@ -31,6 +31,23 @@ def _pick_field(example: dict[str, Any], names: list[str], default: str = "") ->
     return default
 
 
+def _matches_filter_value(actual: Any, expected: Any) -> bool:
+    if isinstance(expected, list):
+        return any(_matches_filter_value(actual, item) for item in expected)
+    if isinstance(expected, str):
+        if actual is None:
+            return False
+        return str(actual).strip().lower() == expected.strip().lower()
+    return actual == expected
+
+
+def _matches_row_filter(example: dict[str, Any], row_filter: dict[str, Any]) -> bool:
+    for field_name, expected_value in row_filter.items():
+        if not _matches_filter_value(example.get(field_name), expected_value):
+            return False
+    return True
+
+
 def _build_examples_mapper(spec: dict[str, Any]):
     columns = spec.get("columns", {})
     instruction_field = columns.get("instruction", "instruction")
@@ -96,6 +113,19 @@ def load_and_prepare_sft_datasets(
             raise FileNotFoundError(f"Dataset file not found: {data_file}")
 
         dataset = load_dataset("json", data_files=str(data_file), split="train")
+        row_filter = spec.get("filter")
+        if row_filter:
+            if not isinstance(row_filter, dict):
+                raise ValueError(
+                    f"Dataset `{dataset_name}` has invalid `filter` in dataset_info.json; expected an object."
+                )
+            dataset = dataset.filter(
+                _matches_row_filter,
+                fn_kwargs={"row_filter": row_filter},
+                num_proc=workers,
+                load_from_cache_file=not data_args.overwrite_cache,
+                desc=f"Applying row filter {dataset_name}",
+            )
         if data_args.max_samples is not None:
             max_samples = min(data_args.max_samples, len(dataset))
             dataset = dataset.select(range(max_samples))
